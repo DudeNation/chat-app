@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - ChatApp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="profile-page">
+    <div class="profile-container">
+        <h1>Your Profile</h1>
+        <div class="avatar-container">
+            <img src="/images/<%= user.avatar %>" alt="Avatar" class="avatar">
+        </div>
+        <form action="/profile/update" method="POST" enctype="multipart/form-data" class="profile-form">
+            <label for="avatar">Change Avatar:</label>
+            <input type="file" name="avatar" id="avatar">
+            <input type="text" name="username" value="<%= user.username %>" required>
+            <input type="email" name="email" value="<%= user.email %>" required>
+            <button type="submit" class="btn btn-primary">Update Profile</button>
+        </form>
+        <a href="/chat" class="btn btn-secondary">Back to Chat</a>
+    </div>
+</body>
+</html>
