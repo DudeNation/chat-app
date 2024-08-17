@@ -1,6 +1,6 @@
+const bcrypt = require('bcryptjs');
 const express = require('express');
 const User = require('../models/user');
-const bcrypt = require('bcryptjs');
 const router = express.Router();
 
 router.get('/register', (req, res) => {
@@ -44,22 +44,26 @@ router.post('/login', async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username }).select('+password');
     
+    console.log('User found:', user); // Log the user here
+
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Incorrect password' });
+    console.log('Password comparison result:', isMatch); // Log the comparison result here
+
+    if (isMatch) {
+      req.session.userId = user._id;
+      return res.json({ success: true, redirect: '/chat' });
     }
 
-    req.session.userId = user._id;
-    res.json({ success: true, redirect: '/chat' });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Server error. Please try again.' });
   }
 });
+
 
 router.get('/logout', async (req, res) => {
   try {

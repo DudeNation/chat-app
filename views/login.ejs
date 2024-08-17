@@ -18,26 +18,21 @@
         </form>
         <script>
             document.getElementById('loginForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                try {
-                    const response = await fetch('/auth/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(Object.fromEntries(formData))
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        window.location.href = data.redirect;
-                    } else {
-                        alert(data.error);
-                    }
-                } catch (error) {
-                    console.error('Login error:', error);
-                    alert('An error occurred. Please try again.');
-                }
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              const response = await fetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(Object.fromEntries(formData))
+              });
+              const data = await response.json();
+              if (data.success) {
+                window.location.href = data.redirect;
+              } else {
+                alert(data.error || 'Login failed');
+              }
             });
-            </script>
+        </script>    
         <p>Don't have an account? <a href="/auth/register">Register</a></p>
     </div>
 </body>
