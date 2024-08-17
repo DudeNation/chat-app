@@ -37,10 +37,12 @@ mongoose.connect(process.env.MONGO_URI)
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
 const profileRoutes = require('./routes/profile');
+const adminRoutes = require('./routes/admin');
 
 app.use('/auth', authRoutes);
 app.use('/chat', chatRoutes);
 app.use('/profile', profileRoutes);
+app.use('/admin', adminRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -52,41 +54,28 @@ const chatRooms = new Set(['General']);
 
 // Socket.io
 io.on('connection', (socket) => {
-  console.log('New WebSocket connection');
+  console.log('User connected:', socket.id);
 
-  socket.on('user connected', (userData) => {
-    socket.username = userData.username;
-    socket.avatar = userData.avatar;
-    activeUsers.add(socket.username);
-    io.emit('update active users', Array.from(activeUsers));
-    io.emit('update chat rooms', Array.from(chatRooms));
+  // Handle joining a chat room
+  socket.on('joinRoom', (roomId) => {
+    socket.join(roomId);
+    console.log('User joined room:', roomId);
   });
 
-  socket.on('create room', (room) => {
-    chatRooms.add(room);
-    io.emit('update chat rooms', Array.from(chatRooms));
-    socket.join(room);
-    io.to(room).emit('user joined', { username: socket.username, room });
+  // Handle leaving a chat room
+  socket.on('leaveRoom', () => {
+    console.log('User left room:', socket.id);
+    socket.leaveAll();
   });
 
-  socket.on('join room', (room) => {
-    socket.join(room);
-    io.to(room).emit('user joined', socket.username, room);
+  // Handle chat messages
+  socket.on('chatMessage', (message) => {
+    io.to(socket.roomId).emit('chatMessage', message);
   });
 
-  socket.on('leave room', (room) => {
-    socket.leave(room);
-    io.to(room).emit('user left', socket.username, room);
-  });
-
-  socket.on('chat message', (msg, room) => {
-    io.to(room).emit('chat message', { username: socket.username, message: msg });
-  });
-
+  // Handle user disconnection
   socket.on('disconnect', () => {
-    activeUsers.delete(socket.username);
-    io.emit('update active users', Array.from(activeUsers));
-    io.emit('user offline', socket.username);
+    console.log('User disconnected:', socket.id);
   });
 });
 
