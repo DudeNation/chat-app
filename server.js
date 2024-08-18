@@ -71,7 +71,7 @@ io.on('connection', (socket) => {
     if (user) {
       socket.userId = user._id;
       socket.username = user.username;
-      socket.avatar = user.avatar || DEFAULT_AVATAR;
+      socket.avatar = user.avatar || '/images/default-avatar.png';
       activeUsers.add(socket.username);
       socket.join('General');
 

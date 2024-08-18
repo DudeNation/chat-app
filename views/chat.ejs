@@ -64,7 +64,7 @@
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', data.username === username ? 'sent' : 'received');
             messageElement.innerHTML = `
-                <img src="${data.avatar || '/images/default-avatar.png'}" alt="${data.username}" class="avatar">
+                <img src="${data.avatar}" alt="${data.username}" class="avatar">
                 <div class="message-content">
                     <p class="username">${data.username}</p>
                     <p class="text">${data.text}</p>
