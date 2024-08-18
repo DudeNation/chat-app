@@ -28,14 +28,15 @@ router.get('/', async (req, res) => {
 router.post('/update', upload.single('avatar'), async (req, res) => {
   try {
     const user = await User.findById(req.session.userId);
+    user.username = req.body.username;
+    user.email = req.body.email;
     if (req.file) {
-      user.avatar = req.file.filename;
-      await user.save();
+      user.avatar = '/images/' + req.file.filename;
     }
-    res.redirect('/profile');
+    await user.save();
+    res.redirect('/chat');
   } catch (error) {
-    console.error('Profile update error:', error);
-    res.status(500).send('Server Error');
+    res.status(500).send('Update failed');
   }
 });
 

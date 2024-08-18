@@ -26,7 +26,7 @@ io.use(sharedsession(session({
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -109,7 +109,7 @@ io.on('connection', (socket) => {
     io.to(room).emit('chat message', { 
       username: socket.username, 
       text: msg.text, 
-      avatar: user.avatar || DEFAULT_AVATAR
+      avatar: user.avatar || '/images/default-avatar.png'
     });
     console.log(`Message from ${socket.username}: ${msg.text}`);
   });
