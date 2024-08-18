@@ -44,28 +44,68 @@
 
         // Listen for messages from the server
         socket.on('chat message', (data) => {
-            const messagesDiv = document.getElementById('chat-messages');
-            let messageContent = `<p><strong>${data.username}:</strong> ${data.text}</p>`;
-            if (data.file) {
-                messageContent += `<img src="${data.file}" alt="Uploaded image" style="max-width: 200px;">`;
+            if (data.username !== username) {
+                appendMessage(data);
             }
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', data.username === username ? 'sent' : 'received');
-            messageElement.innerHTML = `
-                <img src="${data.avatar || '/images/default-avatar.png'}" alt="${data.username}" class="avatar">
-                ${messageContent}
-            `;
-            messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         });
 
-        // Message submit
         document.getElementById('chat-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const msg = document.getElementById('msg').value;
-            socket.emit('chat message', { text: msg }, currentRoom);
-            document.getElementById('msg').value = '';
+            if (msg.trim()) {
+                socket.emit('chat message', { text: msg }, currentRoom);
+                appendMessage({ username, text: msg, avatar }); // Only append locally
+                document.getElementById('msg').value = '';
+            }
         });
+
+        function appendMessage(data) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', data.username === username ? 'sent' : 'received');
+            messageElement.innerHTML = `
+                <img src="${data.avatar}" alt="${data.username}" class="avatar">
+                <div class="message-content">
+                    <p class="username">${data.username}</p>
+                    <p class="text">${data.text}</p>
+                    <p class="timestamp">${new Date().toLocaleTimeString()}</p>
+                </div>
+            `;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        socket.on('user joined', (message) => {
+            appendSystemMessage(message);
+        });
+
+        socket.on('user left', (message) => {
+            appendSystemMessage(message);
+        });
+
+        function appendSystemMessage(message) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('system-message');
+            messageElement.innerHTML = `<span>${message}</span>`;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        socket.on('chat history', (messages) => {
+            messages.forEach(msg => {
+                appendMessage({
+                    username: msg.sender.username,
+                    text: msg.content,
+                    avatar: msg.sender.avatar || '/images/default-avatar.png'
+                });
+            });
+        });
+        localStorage.setItem('socketId', socket.id);
+        const storedSocketId = localStorage.getItem('socketId');
+        if (storedSocketId) {
+            socket.connect();
+        }
     </script>
 </body>
 </html>

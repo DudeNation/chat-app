@@ -12,6 +12,16 @@ const server = http.createServer(app);
 const io = socketIo(server);
 const Message = require('./models/message'); // Assuming you have a Message model
 const User = require('./models/user'); // Assuming you have a User model
+const DEFAULT_AVATAR = '/images/default-avatar.png';
+const sharedsession = require("express-socket.io-session");
+io.use(sharedsession(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: process.env.NODE_ENV === 'production' }
+}), {
+  autoSave: true
+}));
 
 // Middleware
 app.use(express.json());
@@ -42,6 +52,7 @@ const profileRoutes = require('./routes/profile');
 app.use('/auth', authRoutes);
 app.use('/chat', chatRoutes);
 app.use('/profile', profileRoutes);
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
 // Root route
 app.get('/', (req, res) => {
@@ -60,12 +71,47 @@ io.on('connection', (socket) => {
     if (user) {
       socket.userId = user._id;
       socket.username = user.username;
-      socket.avatar = user.avatar;
+      socket.avatar = user.avatar || DEFAULT_AVATAR;
       activeUsers.add(socket.username);
+      socket.join('General');
+
+      const recentMessages = await Message.find({ room: 'General' })
+        .sort({ timestamp: -1 })
+        .limit(1)
+        .populate('sender', 'username avatar');
+      socket.emit('chat history', recentMessages.reverse());
+
+      io.to('General').emit('user joined', `${socket.username} joined the chat`);
       io.emit('update active users', Array.from(activeUsers));
       io.emit('update chat rooms', Array.from(chatRooms));
       console.log(`${user.username} connected`);
     }
+  });
+
+  socket.on('disconnect', () => {
+    if (socket.username) {
+      activeUsers.delete(socket.username);
+      io.to('General').emit('user left', `${socket.username} left the chat`);
+      io.emit('update active users', Array.from(activeUsers));
+      console.log(`${socket.username} disconnected`);
+    }
+  });
+
+  socket.on('chat message', async (msg, room) => {
+    const user = await User.findById(socket.userId);
+    const message = new Message({
+      sender: socket.userId,
+      content: msg.text,
+      room: room,
+      timestamp: new Date(),
+    });
+    await message.save();
+    io.to(room).emit('chat message', { 
+      username: socket.username, 
+      text: msg.text, 
+      avatar: user.avatar || DEFAULT_AVATAR
+    });
+    console.log(`Message from ${socket.username}: ${msg.text}`);
   });
 
   socket.on('create room', (room) => {
@@ -85,24 +131,6 @@ io.on('connection', (socket) => {
     io.to(room).emit('user left', socket.username, room);
   });
 
-  socket.on('chat message', async (msg, room) => {
-    const message = new Message({
-      sender: socket.userId,
-      content: msg.text,
-      room: room,
-      timestamp: new Date(),
-    });
-    await message.save();
-    io.to(room).emit('chat message', { username: socket.username, text: msg.text, avatar: socket.avatar });
-    console.log(`Message from ${socket.username}: ${msg.text}`);
-  });
-
-  socket.on('disconnect', () => {
-    activeUsers.delete(socket.username);
-    io.emit('update active users', Array.from(activeUsers));
-    io.emit('user offline', socket.username);
-    console.log(`${socket.username} disconnected`);
-  });
 });
 
 const PORT = process.env.PORT || 1212;

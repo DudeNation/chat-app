@@ -10,11 +10,11 @@
 <body class="profile-page">
     <div class="profile-container">
         <h1>Your Profile</h1>
-        <% if (user.isAdmin || user.username === "admin") { %>
-            <div class="alert alert-success">CBJS{FLAG_1}</div>
-        <% } %>
+            <% if (user.isAdmin || user.username === "admin") { %>
+                <div class="alert alert-success">CBJS{FLAG_1}</div>
+            <% } %>
         <div class="avatar-container">
-            <img src="/images/<%= user.avatar %>" alt="Avatar" class="avatar">
+            <img src="<%= user.avatar || DEFAULT_AVATAR %>" alt="Avatar" class="avatar">
         </div>
         <form action="/profile/update" method="POST" enctype="multipart/form-data" class="profile-form">
             <label for="avatar">Change Avatar:</label>
