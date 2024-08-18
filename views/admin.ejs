@@ -1,24 +1,20 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Admin Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-  <h2>Admin Login</h2>
-  <% if (locals.error) { %>
-    <p style="color: red;"><%= error %></p>
-  <% } %>
-  <form action="/admin/login" method="POST">
-    <input type="text" name="username" placeholder="Admin Username" required>
-    <input type="password" name="password" placeholder="Admin Password" required>
-    <button type="submit">Login</button>
-  </form>
-  <div class="admin-section">
-    <h3>Update Background Image</h3>
-    <form action="/admin/update-background" method="POST" enctype="multipart/form-data">
-      <input type="file" name="background" accept="image/*">
-      <button type="submit">Update Background</button>
-    </form>
-  </div>
+    <div class="admin-container">
+        <h1>Admin Panel</h1>
+        <form action="/admin/update-background" method="POST" enctype="multipart/form-data">
+            <label for="background">Update Background Image:</label>
+            <input type="file" name="background" id="background" accept="image/*" required>
+            <button type="submit">Update</button>
+        </form>
+        <a href="/chat" class="btn btn-secondary">Back to Chat</a>
+    </div>
 </body>
 </html>

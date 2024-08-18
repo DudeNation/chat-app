@@ -15,6 +15,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+router.get('/login', (req, res) => {
+  res.render('adminLogin');
+});
+
 router.get('/', adminAuth, (req, res) => {
   res.render('admin');
 });

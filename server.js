@@ -48,11 +48,13 @@ mongoose.connect(process.env.MONGO_URI)
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
 const profileRoutes = require('./routes/profile');
+const adminRoutes = require('./routes/admin');
 
 app.use('/auth', authRoutes);
 app.use('/chat', chatRoutes);
 app.use('/profile', profileRoutes);
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
+app.use('/admin', adminRoutes);
 
 // Root route
 app.get('/', (req, res) => {
