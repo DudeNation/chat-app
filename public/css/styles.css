@@ -332,6 +332,14 @@
 }
 
 /* Home Page Styles */
+.home-page {
+  background-image: url('/images/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100vh;
+}
+
 .home-container {
   display: flex;
   flex-direction: column;
