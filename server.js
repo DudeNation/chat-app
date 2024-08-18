@@ -93,7 +93,7 @@ io.on('connection', (socket) => {
       timestamp: new Date(),
     });
     await message.save();
-    io.to(room).emit('chat message', { username: socket.username, message: msg, avatar: socket.avatar });
+    io.to(room).emit('chat message', { username: socket.username, text: msg.text, avatar: socket.avatar });
     console.log(`Message from ${socket.username}: ${msg.text}`);
   });
 
