@@ -11,6 +11,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 const Message = require('./models/message'); // Assuming you have a Message model
+const User = require('./models/user'); // Assuming you have a User model
 
 // Middleware
 app.use(express.json());
@@ -52,15 +53,19 @@ const chatRooms = new Set(['General']);
 
 // Socket.io
 io.on('connection', (socket) => {
-  console.log('New WebSocket connection');
+  console.log('a user connected');
 
-  socket.on('user connected', (userData) => {
-    socket.username = userData.username;
-    socket.avatar = userData.avatar;
-    activeUsers.add(socket.username);
-    io.emit('update active users', Array.from(activeUsers));
-    io.emit('update chat rooms', Array.from(chatRooms));
-    console.log(`${userData.username} connected`);
+  socket.on('user connected', async (userData) => {
+    const user = await User.findOne({ username: userData.username });
+    if (user) {
+      socket.userId = user._id;
+      socket.username = user.username;
+      socket.avatar = user.avatar;
+      activeUsers.add(socket.username);
+      io.emit('update active users', Array.from(activeUsers));
+      io.emit('update chat rooms', Array.from(chatRooms));
+      console.log(`${user.username} connected`);
+    }
   });
 
   socket.on('create room', (room) => {
@@ -82,7 +87,7 @@ io.on('connection', (socket) => {
 
   socket.on('chat message', async (msg, room) => {
     const message = new Message({
-      sender: socket.username,
+      sender: socket.userId,
       content: msg.text,
       room: room,
       timestamp: new Date(),
