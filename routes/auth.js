@@ -11,32 +11,30 @@ router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // Validate input fields
-    if (!username || !email || !password) {
-      return res.status(400).render('register', {
-        error: 'Please provide all required fields',
-      });
-    }
+    // Convert username and email to lowercase
+    const lowerCaseUsername = username.toLowerCase();
+    const lowerCaseEmail = email.toLowerCase();
 
     // Check if user already exists
-    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    const existingUser = await User.findOne({ $or: [{ username: lowerCaseUsername }, { email: lowerCaseEmail }] });
     if (existingUser) {
-      return res.status(400).render('register', {
-        error: 'Username or email already exists',
+      return res.status(400).render('register', { 
+        title: 'Register', 
+        error: 'Username or email already exists' 
       });
     }
 
-    // Create new user
-    const hashedPassword = await bcrypt.hash(password, 12);
-    const user = new User({ username, email, password: hashedPassword });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({ username: lowerCaseUsername, email: lowerCaseEmail, password: hashedPassword });
     await user.save();
 
-    req.flash('success', 'Registration successful. Please login.');
+    req.flash('success', 'Registration successful. Please log in.');
     res.redirect('/auth/login');
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).render('register', {
-      error: 'An error occurred. Please try again.',
+    res.status(500).render('register', { 
+      title: 'Register', 
+      error: 'Registration failed. Please try again.' 
     });
   }
 });
@@ -45,29 +43,28 @@ router.get('/login', (req, res) => {
   res.render('login', { title: 'Login' });
 });
 
+// Login route
 router.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+
   try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username }).select('+password');
-    
-    console.log('User found:', user); // Log the user here
-
+    // Convert the username to lowercase for case-insensitive comparison
+    const user = await User.findOne({ username: username.toLowerCase() }).select('+password');
     if (!user) {
-      return res.status(401).json({ error: 'User not found' });
+      return res.status(400).json({ error: 'Invalid email or password.' });
     }
 
+    // Check the password
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log('Password comparison result:', isMatch); // Log the comparison result here
-
     if (!isMatch) {
-      return res.status(401).json({ error: 'Incorrect password' });
+      return res.status(400).json({ error: 'Invalid email or password.' });
     }
 
-    // Store the user ID in the session
+    // If login is successful, you can set up a session or JWT token here
     req.session.userId = user._id;
     res.redirect('/chat');
-  } catch (error) {
-    console.error('Login error:', error);
+  } catch (err) {
+    console.error('Login error:', err);
     res.status(500).json({ error: 'Server error. Please try again.' });
   }
 });

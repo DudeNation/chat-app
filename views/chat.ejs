@@ -1,182 +1,84 @@
-<!-- views/chat.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
-  <link rel="stylesheet" href="/css/styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body class="chat-page">
-  <div class="chat-container">
-    <aside class="sidebar">
-      <h2>Chat Rooms</h2>
-      <ul id="rooms-list"></ul>
-      <input type="text" id="new-room" placeholder="New room name">
-      <button id="create-room">Create Room</button>
-      <h2>Online Users</h2>
-      <ul id="users-list"></ul>
-    </aside>
-    <main class="chat-main">
-      <header class="chat-header">
-        <h1 id="room-name">Chat Room</h1>
-        <div>
-          <img src="<%= user.avatar ? `/uploads/${user.avatar}` : '/images/default-avatar.png' %>" alt="<%= user.username %>" class="avatar">
-          <span><%= user.username %></span>
-          <a href="/profile" class="btn btn-secondary">Profile</a>
-          <a href="/auth/logout" class="btn btn-secondary">Logout</a>
-        </div>
-      </header>
-      <div id="chat-messages" class="chat-messages">
-        <% messages.forEach(function(message) { %>
-          <div class="message">
-            <img src="<%= message.sender.avatar %>" alt="<%= message.sender.username %>" class="avatar">
-            <div class="message-content">
-              <p><strong><%= message.sender.username %>:</strong> <%= message.content %></p>
-              <span class="timestamp"><%= message.timestamp %></span>
-            </div>
-          </div>
-        <% }); %>
-      </div>
-      <form id="chat-form" class="chat-form" action="/chat/message" method="POST">
-        <input id="msg" type="text" name="message" placeholder="Type a message..." required autocomplete="off">
-        <button type="submit" class="btn btn-primary">Send</button>
-      </form>
-    </main>
-  </div>
+    <div class="chat-container">
+        <aside class="sidebar">
+            <h2>Chat Rooms</h2>
+            <ul id="rooms-list"></ul>
+            <input type="text" id="new-room" placeholder="New room name">
+            <button id="create-room">Create Room</button>
+            <h2>Online Users</h2>
+            <ul id="users-list"></ul>
+        </aside>
+        <main class="chat-main">
+            <header class="chat-header">
+                <h1 id="room-name">General Room</h1>
+                <div>
+                    <a href="/profile" class="btn btn-secondary">Profile</a>
+                    <a href="/auth/logout" class="btn btn-secondary">Logout</a>
+                </div>
+            </header>
+            <div id="chat-messages" class="chat-messages"></div>
+            <form id="chat-form" class="chat-form">
+                <input id="msg" type="text" placeholder="Type a message..." required autocomplete="off">
+                <button type="submit" class="btn btn-primary">Send</button>
+            </form>
+        </main>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const username = '<%= user.username %>';
+        const avatar = '<%= user.avatar %>';
+        const room = 'General'; // Default room
+        let currentRoom = room;
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    const username = '<%= user.username %>';
-    let currentRoom = 'General';
+        // Emit user connected event
+        socket.emit('user connected', { username, avatar });
 
-    socket.emit('user connected', username);
+        // Listen for messages from the server
+        socket.on('chat message', (data) => {
+            const messagesDiv = document.getElementById('chat-messages');
+            let messageContent = `<p><strong>${data.username}:</strong> ${data.message.text}</p>`;
+            if (data.message.file) {
+                messageContent += `<img src="${data.message.file}" alt="Uploaded image" style="max-width: 200px;">`;
+            }
+            messagesDiv.innerHTML += `
+                <div class="message ${data.username === username ? 'sent' : 'received'}">
+                    <img src="${data.avatar || '/images/default-avatar.png'}" alt="${data.username}" class="avatar">
+                    ${messageContent}
+                </div>
+            `;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
 
-    socket.on('update active users', (users) => {
-      const usersList = document.getElementById('users-list');
-      usersList.innerHTML = users.map(user => `<li data-username="${user}">${user}</li>`).join('');
-    });
+        // Message submit
+        document.getElementById('chat-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const msg = document.getElementById('msg').value;
+            const fileInput = document.getElementById('file-upload');
 
-    socket.on('update chat rooms', (rooms) => {
-      const roomsList = document.getElementById('rooms-list');
-      roomsList.innerHTML = rooms.map(room => `<li>${room.name} <span class="room-tag ${room.isPrivate ? 'private' : 'public'}">${room.isPrivate ? 'Private' : 'Public'}</span></li>`).join('');
-    });
-
-    socket.on('join room', (room) => {
-      socket.emit('join room', room);
-      currentRoom = room;
-      document.getElementById('room-name').textContent = room;
-      document.getElementById('chat-messages').innerHTML = '';
-      // Add welcome message
-      const welcomeMessage = "Welcome to the place where everyone can chat and share their thoughts with each other";
-      const messagesDiv = document.getElementById('chat-messages');
-      messagesDiv.innerHTML += `<p class="welcome-message">${welcomeMessage}</p>`;
-    });
-
-    document.getElementById('create-room').addEventListener('click', () => {
-      const roomName = document.getElementById('new-room').value.trim();
-      const isPrivate = document.getElementById('private-room').checked;
-      if (roomName) {
-        socket.emit('create room', roomName, isPrivate);
-        document.getElementById('new-room').value = '';
-        document.getElementById('private-room').checked = false;
-      }
-    });
-
-    socket.on('room created', (room) => {
-      if (room.isPrivate) {
-        alert(`Private room "${room.name}" created. Pin code: ${room.pinCode}`);
-      }
-      // Add the room to the list of rooms
-    });
-
-
-    document.getElementById('rooms-list').addEventListener('click', (e) => {
-      if (e.target.tagName === 'LI') {
-        const newRoom = e.target.textContent;
-        socket.emit('leave room', currentRoom);
-        socket.emit('join room', newRoom);
-        currentRoom = newRoom;
-        document.getElementById('room-name').textContent = newRoom;
-        document.getElementById('chat-messages').innerHTML = '';
-      }
-    });
-
-    document.getElementById('chat-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const msg = document.getElementById('msg').value;
-      const fileInput = document.getElementById('file-upload');
-
-      if (msg || fileInput.files.length > 0) {
-        if (fileInput.files.length > 0) {
-          const file = fileInput.files[0];
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            socket.emit('chat message', { text: msg, file: e.target.result }, currentRoom);
-          };
-          reader.readAsDataURL(file);
-        } else {
-          socket.emit('chat message', { text: msg }, currentRoom);
-        }
-        document.getElementById('msg').value = '';
-        fileInput.value = '';
-      }
-    });
-
-    document.getElementById('users-list').addEventListener('click', (e) => {
-      if (e.target.tagName === 'LI') {
-        const clickedUsername = e.target.dataset.username;
-        if (clickedUsername !== username) {
-          const action = confirm(`Do you want to view ${clickedUsername}'s profile or send a private message?`);
-          if (action) {
-            window.location.href = `/profile/${clickedUsername}`;
-          } else {
-            startPrivateChat(clickedUsername);
-          }
-        }
-      }
-    });
-
-    function startPrivateChat(recipient) {
-      const roomName = `private_${username}_${recipient}`;
-      socket.emit('join room', roomName);
-      currentRoom = roomName;
-      document.getElementById('room-name').textContent = `Private chat with ${recipient}`;
-      document.getElementById('chat-messages').innerHTML = '';
-    }
-
-    socket.on('chat message', (data) => {
-      const messagesDiv = document.getElementById('chat-messages');
-      let messageContent = `<p><strong>${data.username}:</strong> ${data.text}</p>`;
-      if (data.file) {
-        messageContent += `<img src="${data.file}" alt="Uploaded image" style="max-width: 200px;">`;
-      }
-      messagesDiv.innerHTML += `
-        <div class="message ${data.username === username ? 'sent' : 'received'}">
-          <img src="${data.avatar || '/images/default-avatar.png'}" alt="${data.username}" class="avatar">
-          ${messageContent}
-        </div>
-      `;
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    });
-
-    socket.on('user joined', (username, room) => {
-      const messagesDiv = document.getElementById('chat-messages');
-      messagesDiv.innerHTML += `<p><em>${username} has joined ${room}</em></p>`;
-    });
-
-    socket.on('user left', (username, room) => {
-      const messagesDiv = document.getElementById('chat-messages');
-      messagesDiv.innerHTML += `<p><em>${username} has left ${room}</em></p>`;
-    });
-
-    socket.on('user offline', (username) => {
-      const userElement = document.querySelector(`#users-list li[data-username="${username}"]`);
-      if (userElement) {
-        userElement.classList.add('offline');
-      }
-    });
-  </script>
+            if (msg || fileInput.files.length > 0) {
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        socket.emit('chat message', { text: msg, file: e.target.result }, currentRoom);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    socket.emit('chat message', { text: msg }, currentRoom);
+                }
+                document.getElementById('msg').value = '';
+                fileInput.value = '';
+            }
+        });
+    </script>
 </body>
 </html>
