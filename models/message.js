@@ -1,14 +1,10 @@
-// models/user.js
 const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  isAdmin: { type: Boolean, default: false },
+const messageSchema = new mongoose.Schema({
+  sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  content: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now },
+  room: { type: String, required: true },
 });
 
-module.exports = mongoose.model('User', userSchema);
-
-// models/message.js
-const mongoose = require
+module.exports = mongoose.model('Message', messageSchema);

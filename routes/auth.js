@@ -59,11 +59,13 @@ router.post('/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     console.log('Password comparison result:', isMatch); // Log the comparison result here
 
-    if (isMatch) {
-      req.session.userId = user._id;
-      return res.redirect('/chat');
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Incorrect password' });
     }
 
+    // Store the user ID in the session
+    req.session.userId = user._id;
+    res.redirect('/chat');
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Server error. Please try again.' });

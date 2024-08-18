@@ -27,9 +27,19 @@
           <a href="/auth/logout" class="btn btn-secondary">Logout</a>
         </div>
       </header>
-      <div id="chat-messages" class="chat-messages"></div>
-      <form id="chat-form" class="chat-form">
-        <input id="msg" type="text" placeholder="Type a message..." required autocomplete="off">
+      <div id="chat-messages" class="chat-messages">
+        <% messages.forEach(function(message) { %>
+          <div class="message">
+            <img src="<%= message.sender.avatar %>" alt="<%= message.sender.username %>" class="avatar">
+            <div class="message-content">
+              <p><strong><%= message.sender.username %>:</strong> <%= message.content %></p>
+              <span class="timestamp"><%= message.timestamp %></span>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+      <form id="chat-form" class="chat-form" action="/chat/message" method="POST">
+        <input id="msg" type="text" name="message" placeholder="Type a message..." required autocomplete="off">
         <button type="submit" class="btn btn-primary">Send</button>
       </form>
     </main>
