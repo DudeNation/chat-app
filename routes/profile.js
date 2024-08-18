@@ -7,10 +7,10 @@ const path = require('path');
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../uploads'));
+    cb(null, path.join(__dirname, '../public/uploads'));
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
+    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
   }
 });
 
@@ -31,7 +31,7 @@ router.post('/update', upload.single('avatar'), async (req, res) => {
     user.username = req.body.username;
     user.email = req.body.email;
     if (req.file) {
-      user.avatar = '/images/' + req.file.filename;
+      user.avatar = '/uploads/' + req.file.filename;
     }
     await user.save();
     res.redirect('/chat');
