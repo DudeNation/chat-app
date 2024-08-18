@@ -6,16 +6,16 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true, select: false },
   isAdmin: { type: Boolean, default: false },
-  avatar: { type: String, default: '/images/default-avatar.png' },
+  avatar: { type: String, default: '/images/default-avatar.jpg' },
   status: { type: String, enum: ['online', 'offline'], default: 'offline' }
 });
 
-UserSchema.pre('save', async function(next) {
-  if (this.isModified('password')) {
-    this.password = await bcrypt.hash(this.password, 12);
-  }
-  next();
-});
+// UserSchema.pre('save', async function(next) {
+//   if (this.isModified('password')) {
+//     this.password = await bcrypt.hash(this.password, 12);
+//   }
+//   next();
+// });
 
 module.exports = mongoose.model('User', UserSchema);
 
