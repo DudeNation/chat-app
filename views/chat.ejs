@@ -20,8 +20,12 @@
     <main class="chat-main">
       <header class="chat-header">
         <h1 id="room-name">Chat Room</h1>
-        <a href="/profile" class="btn btn-secondary">Profile</a>
-        <a href="/auth/logout" class="btn btn-secondary">Logout</a>
+        <div>
+          <img src="<%= user.avatar ? `/uploads/${user.avatar}` : '/images/default-avatar.png' %>" alt="<%= user.username %>" class="avatar">
+          <span><%= user.username %></span>
+          <a href="/profile" class="btn btn-secondary">Profile</a>
+          <a href="/auth/logout" class="btn btn-secondary">Logout</a>
+        </div>
       </header>
       <div id="chat-messages" class="chat-messages"></div>
       <form id="chat-form" class="chat-form">
@@ -41,12 +45,12 @@
 
     socket.on('update active users', (users) => {
       const usersList = document.getElementById('users-list');
-      usersList.innerHTML = users.map(user => `<li>${user}</li>`).join('');
+      usersList.innerHTML = users.map(user => `<li data-username="${user}">${user}</li>`).join('');
     });
 
     socket.on('update chat rooms', (rooms) => {
       const roomsList = document.getElementById('rooms-list');
-      roomsList.innerHTML = rooms.map(room => `<li>${room}</li>`).join('');
+      roomsList.innerHTML = rooms.map(room => `<li>${room.name} <span class="room-tag ${room.isPrivate ? 'private' : 'public'}">${room.isPrivate ? 'Private' : 'Public'}</span></li>`).join('');
     });
 
     socket.on('join room', (room) => {
@@ -62,11 +66,21 @@
 
     document.getElementById('create-room').addEventListener('click', () => {
       const roomName = document.getElementById('new-room').value.trim();
+      const isPrivate = document.getElementById('private-room').checked;
       if (roomName) {
-        socket.emit('create room', roomName);
+        socket.emit('create room', roomName, isPrivate);
         document.getElementById('new-room').value = '';
+        document.getElementById('private-room').checked = false;
       }
     });
+
+    socket.on('room created', (room) => {
+      if (room.isPrivate) {
+        alert(`Private room "${room.name}" created. Pin code: ${room.pinCode}`);
+      }
+      // Add the room to the list of rooms
+    });
+
 
     document.getElementById('rooms-list').addEventListener('click', (e) => {
       if (e.target.tagName === 'LI') {

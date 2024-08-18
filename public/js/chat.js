@@ -8,6 +8,37 @@ socket.on('message', message => {
   outputMessage(message);
 });
 
+socket.on('update active users', (users) => {
+  const usersList = document.getElementById('users-list');
+  usersList.innerHTML = users.map(user => `
+    <li>
+      <img src="${user.avatar ? `/uploads/${user.avatar}` : '/images/default-avatar.png'}" alt="${user.username}" class="avatar">
+      <span>${user.username}</span>
+    </li>
+  `).join('');
+});
+
+socket.on('user joined', (username, room) => {
+  if (room === 'General') {
+    const messagesDiv = document.getElementById('chat-messages');
+    messagesDiv.innerHTML += `<p><em>${username} has joined the chat room</em></p>`;
+  }
+});
+
+socket.on('user left', (username, room) => {
+  if (room === 'General') {
+    const messagesDiv = document.getElementById('chat-messages');
+    messagesDiv.innerHTML += `<p><em>${username} has left the chat room</em></p>`;
+  }
+});
+
+socket.on('update avatar', (user) => {
+  if (user.username === username) {
+    const avatarElement = document.querySelector('.chat-header .avatar');
+    avatarElement.src = user.avatar ? `/uploads/${user.avatar}` : '/images/default-avatar.png';
+  }
+});
+
 // Message submit
 document.getElementById('chat-form').addEventListener('submit', (e) => {
   e.preventDefault();

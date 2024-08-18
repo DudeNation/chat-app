@@ -3,17 +3,18 @@ const router = express.Router();
 const User = require('../models/user');
 const auth = require('../middleware/auth');
 const multer = require('multer');
-const upload = multer({ dest: 'public/images/' });
 const path = require('path');
 
 const storage = multer.diskStorage({
-  destination: './public/uploads/',
-  filename: function(req, file, cb) {
-    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, '../uploads'));
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
   }
 });
 
-const uploadWithStorage = multer({ storage: storage });
+const upload = multer({ storage: storage });
 
 router.get('/', async (req, res) => {
   try {
@@ -27,15 +28,14 @@ router.get('/', async (req, res) => {
 router.post('/update', upload.single('avatar'), async (req, res) => {
   try {
     const user = await User.findById(req.session.userId);
-    user.username = req.body.username;
-    user.email = req.body.email;
     if (req.file) {
-      user.avatar = '/uploads/' + req.file.filename;
+      user.avatar = req.file.filename;
+      await user.save();
     }
-    await user.save();
-    res.redirect('/chat');
+    res.redirect('/profile');
   } catch (error) {
-    res.status(500).send('Update failed');
+    console.error('Profile update error:', error);
+    res.status(500).send('Server Error');
   }
 });
 
