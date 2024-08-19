@@ -119,11 +119,11 @@ io.on('connection', async (socket) => {
 
   socket.on('chat message', async (msg, room) => {
     // parse first link in message
-    const link = msg.text.match(/\bhttps?:\/\/\S+/gi);
+    const urls = msg.text.match(/\bhttps?:\/\/\S+/gi);
     let url_info = {};
-    if (link) {
+    if (urls) {
       try {
-        const preview = await linkPreviewGenerator(link[0]);
+        const preview = await linkPreviewGenerator(urls[0]);
         url_info = {
           title: preview.title,
           description: preview.description,

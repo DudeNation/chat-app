@@ -62,11 +62,33 @@
             const messagesContainer = document.querySelector('.messages-container');
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', data.username === username ? 'sent' : 'received');
+
+            let messageContent = data.text;
+            if (data.url_info && data.url_info.title) {
+                messageContent += `
+                    <div class="url-preview">
+                        <a href="${data.text}" target="_blank">
+                            <img src="${data.url_info.image}" alt="${data.url_info.title}">
+                            <div class="url-info">
+                                <h4>${data.url_info.title}</h4>
+                                <p>${data.url_info.description}</p>
+                            </div>
+                        </a>
+                    </div>
+                `;
+            } else {
+                // wrap URLs in <a> tags and truncate long URLs
+                messageContent = messageContent.replace(/(https?:\/\/\S+)/gi, (url) => {
+                    const truncatedUrl = url.length > 30 ? url.substr(0, 30) + '...' : url;
+                    return `<a href="${url}" target="_blank">${truncatedUrl}</a>`;
+                });
+            }
+
             messageElement.innerHTML = `
                 <img src="${data.avatar}" alt="${data.username}" class="avatar">
                 <div class="message-content">
                     <p class="username"><strong>${data.username}</strong></p>
-                    <p class="text">${data.text}</p>
+                    <div class="text">${messageContent}</div>
                     <p class="timestamp">${new Date(data.timestamp).toLocaleTimeString()}</p>
                 </div>
             `;
@@ -176,6 +198,40 @@
       
         .avatar.offline {
           filter: grayscale(100%);
+        }
+
+        .url-preview {
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .url-preview a {
+            display: flex;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .url-preview img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+        }
+
+        .url-preview .url-info {
+            padding: 10px;
+        }
+
+        .url-preview h4 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .url-preview p {
+            margin: 5px 0 0;
+            font-size: 14px;
+            color: #666;
         }
       </style>
 </body>
