@@ -9,10 +9,10 @@
 <body class="chat-page">
     <div class="chat-container">
         <aside class="sidebar">
-            <h2>Chat Rooms</h2>
+            <!-- <h2>Chat Rooms</h2>
             <ul id="rooms-list"></ul>
             <input type="text" id="new-room" placeholder="New room name">
-            <button id="create-room">Create Room</button>
+            <button id="create-room">Create Room</button> -->
             <h2>Online Users</h2>
             <ul id="users-list"></ul>
         </aside>
@@ -39,9 +39,6 @@
         const room = 'General'; // Default room
         let currentRoom = room;
 
-        // Emit user connected event
-        socket.emit('user connected', { username, avatar });
-
         // Listen for messages from the server
         socket.on('chat message', (data) => {
             if (data.username !== username) {
@@ -54,7 +51,7 @@
             const msg = document.getElementById('msg').value;
             if (msg.trim()) {
                 socket.emit('chat message', { text: msg }, currentRoom);
-                appendMessage({ username, text: msg, avatar }); // Only append locally
+                appendMessage({ username, text: msg, avatar, timestamp: new Date().toLocaleString() }); // Only append locally
                 document.getElementById('msg').value = '';
             }
         });
@@ -68,10 +65,10 @@
                 <div class="message-content">
                     <p class="username">${data.username}</p>
                     <p class="text">${data.text}</p>
-                    <p class="timestamp">${new Date().toLocaleTimeString()}</p>
+                    <p class="timestamp">${new Date(data.timestamp).toLocaleTimeString()}</p>
                 </div>
             `;
-            messagesDiv.appendChild(messageElement);
+            messagesDiv.append(messageElement);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
@@ -97,10 +94,26 @@
                 appendMessage({
                     username: msg.sender.username,
                     text: msg.content,
-                    avatar: msg.sender.avatar || '/images/default-avatar.png'
+                    avatar: msg.sender.avatar || '/images/default-avatar.png',
+                    timestamp: msg.timestamp
                 });
             });
         });
+
+        socket.on('update active users', (users) => {
+            const usersList = document.getElementById('users-list');
+            usersList.innerHTML = '';
+            users.forEach(user => {
+                const userElement = document.createElement('li');
+                if (user === username) {
+                    userElement.textContent = `${user} (You)`;
+                } else {
+                    userElement.textContent = user;
+                }
+                usersList.appendChild(userElement);
+            });
+        });
+
         localStorage.setItem('socketId', socket.id);
         const storedSocketId = localStorage.getItem('socketId');
         if (storedSocketId) {

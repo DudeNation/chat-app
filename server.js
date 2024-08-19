@@ -2,37 +2,31 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const mongoose = require('mongoose');
-const session = require('express-session');
 const path = require('path');
 const flash = require('connect-flash');
+const linkPreviewGenerator = require('link-preview-generator');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
 const Message = require('./models/message'); // Assuming you have a Message model
 const User = require('./models/user'); // Assuming you have a User model
 const DEFAULT_AVATAR = '/images/default-avatar.png';
-const sharedsession = require("express-socket.io-session");
-io.use(sharedsession(session({
+
+const session = require('express-session')({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: { secure: process.env.NODE_ENV === 'production' }
-}), {
-  autoSave: true
-}));
+});
+const sharedsession = require("express-socket.io-session");
+
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production' }
-}));
+app.use(session);
 app.use(flash());
 
 // Set view engine
@@ -65,30 +59,40 @@ const activeUsers = new Set();
 const chatRooms = new Set(['General']);
 
 // Socket.io
-io.on('connection', (socket) => {
-  console.log('a user connected');
 
-  socket.on('user connected', async (userData) => {
-    const user = await User.findOne({ username: userData.username });
-    if (user) {
-      socket.userId = user._id;
-      socket.username = user.username;
-      socket.avatar = user.avatar || '/images/default-avatar.png';
-      activeUsers.add(socket.username);
-      socket.join('General');
 
-      const recentMessages = await Message.find({ room: 'General' })
-        .sort({ timestamp: -1 })
-        .limit(1)
-        .populate('sender', 'username avatar');
-      socket.emit('chat history', recentMessages.reverse());
 
-      io.to('General').emit('user joined', `${socket.username} joined the chat`);
-      io.emit('update active users', Array.from(activeUsers));
-      io.emit('update chat rooms', Array.from(chatRooms));
-      console.log(`${user.username} connected`);
-    }
-  });
+const io = socketIo(server);
+io.use(sharedsession(session));
+
+io.on('connection', async (socket) => {
+  if (!socket.handshake.session.userId) {
+    socket.emit('unauthorized', 'You are not authorized to join the chat');
+    return socket.disconnect();
+  }
+
+  const user = await User.findById(socket.handshake.session.userId);
+  if (user) {
+    socket.userId = user._id;
+    socket.username = user.username;
+    socket.avatar = user.avatar || '/images/default-avatar.png';
+    activeUsers.add(socket.username);
+    socket.join('General');
+
+    const recentMessages = await Message.find({ room: 'General' })
+      .sort({ timestamp: -1 })
+      .limit(1)
+      .populate('sender', 'username avatar');
+    socket.emit('chat history', recentMessages.reverse());
+
+    io.to('General').emit('user joined', `${socket.username} joined the chat`);
+    io.emit('update active users', Array.from(activeUsers));
+    io.emit('update chat rooms', Array.from(chatRooms));
+    console.log(`${user.username} connected`);
+  } else {
+    socket.emit('unauthorized', 'You are not authorized to join the chat');
+    return socket.disconnect();
+  }
 
   socket.on('disconnect', () => {
     if (socket.username) {
@@ -100,18 +104,36 @@ io.on('connection', (socket) => {
   });
 
   socket.on('chat message', async (msg, room) => {
+    // parse first link in message
+    const link = msg.text.match(/\bhttps?:\/\/\S+/gi);
+    let url_info = {};
+    if (link) {
+      try {
+        const preview = await linkPreviewGenerator(link[0]);
+        url_info = {
+          title: preview.title,
+          description: preview.description,
+          image: preview.img
+        };
+      } catch(e) {
+        console.error('Error fetching link preview:', e);
+      } 
+    }
     const user = await User.findById(socket.userId);
     const message = new Message({
-      sender: socket.userId,
+      sender: user._id,
       content: msg.text,
       room: room,
       timestamp: new Date(),
+      url_info: url_info
     });
     await message.save();
+
     io.to(room).emit('chat message', { 
       username: socket.username, 
       text: msg.text, 
-      avatar: user.avatar || '/images/default-avatar.png'
+      avatar: user.avatar || '/images/default-avatar.png',
+      url_info
     });
     console.log(`Message from ${socket.username}: ${msg.text}`);
   });
