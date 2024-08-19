@@ -41,12 +41,10 @@ mongoose.connect(process.env.MONGO_URI)
 // Routes
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
-const profileRoutes = require('./routes/profile');
 const adminRoutes = require('./routes/admin');
 
 app.use('/auth', authRoutes);
 app.use('/chat', chatRoutes);
-app.use('/profile', profileRoutes);
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 app.use('/admin', adminRoutes);
 
@@ -64,6 +62,9 @@ const chatRooms = new Set(['General']);
 
 const io = socketIo(server);
 io.use(sharedsession(session));
+
+const profileRoutes = require('./routes/profile')(io);
+app.use('/profile', profileRoutes);
 
 io.on('connection', async (socket) => {
   if (!socket.handshake.session.userId) {

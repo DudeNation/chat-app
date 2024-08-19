@@ -85,11 +85,13 @@
             }
 
             messageElement.innerHTML = `
-                <img src="${data.avatar}" alt="${data.username}" class="avatar">
-                <div class="message-content">
-                    <p class="username"><strong>${data.username}</strong></p>
-                    <div class="text">${messageContent}</div>
-                    <p class="timestamp">${new Date(data.timestamp).toLocaleTimeString()}</p>
+                <div class="user-item" data-user-id="${data.userId}">
+                    <img src="${data.avatar}" alt="${data.username}" class="avatar">
+                    <div class="message-content">
+                        <p class="username"><strong>${data.username}</strong></p>
+                        <div class="text">${messageContent}</div>
+                        <p class="timestamp">${new Date(data.timestamp).toLocaleTimeString()}</p>
+                    </div>
                 </div>
             `;
             messagesContainer.append(messageElement);
@@ -130,13 +132,21 @@
             users.forEach(user => {
                 const userElement = document.createElement('li');
                 userElement.innerHTML = `
-                    <div class="user-item">
+                    <div class="user-item" data-user-id="${user._id}">
                         <img src="${user.avatar}" alt="${user.username}" class="avatar ${user.status}">
                         <span class="username">${user.username}${user.username === username ? ' (You)' : ''}</span>
                     </div>
                 `;
                 usersList.appendChild(userElement);
             });
+        });
+
+        socket.on('user avatar updated', (data) => {
+            const userElement = document.querySelector(`#users-list .user-item[data-user-id="${data.userId}"]`);
+            if (userElement) {
+                const avatarElement = userElement.querySelector('.avatar');
+                avatarElement.src = data.avatar;
+            }
         });
 
         localStorage.setItem('socketId', socket.id);
