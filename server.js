@@ -133,6 +133,7 @@ io.on('connection', async (socket) => {
       username: socket.username, 
       text: msg.text, 
       avatar: user.avatar || '/images/default-avatar.png',
+      timestamp: message.timestamp,
       url_info
     });
     console.log(`Message from ${socket.username}: ${msg.text}`);
