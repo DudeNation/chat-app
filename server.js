@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const path = require('path');
 const flash = require('connect-flash');
 const linkPreviewGenerator = require('link-preview-generator');
+var XSSFilter = require('xssfilter');
+var xssFilter = new XSSFilter();
 require('dotenv').config();
 
 const app = express();
@@ -119,10 +121,13 @@ io.on('connection', async (socket) => {
         console.error('Error fetching link preview:', e);
       } 
     }
+
+    let userMsg = xssFilter.filter(msg.text);
+
     const user = await User.findById(socket.userId);
     const message = new Message({
       sender: user._id,
-      content: msg.text,
+      content: userMsg,
       room: room,
       timestamp: new Date(),
       url_info: url_info
@@ -131,7 +136,7 @@ io.on('connection', async (socket) => {
 
     io.to(room).emit('chat message', { 
       username: socket.username, 
-      text: msg.text, 
+      text: userMsg, 
       avatar: user.avatar || '/images/default-avatar.png',
       timestamp: message.timestamp,
       url_info
