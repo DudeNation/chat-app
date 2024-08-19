@@ -16,7 +16,7 @@
         <div class="avatar-container">
             <img src="<%= user.avatar || '/images/default-avatar.png' %>" alt="Avatar" class="avatar">
         </div>
-        <form action="/profile/update" method="POST" enctype="multipart/form-data" class="profile-form">
+        <form id="profile-form" action="/profile/update" method="POST" enctype="multipart/form-data" class="profile-form">
             <label for="avatar">Change Avatar:</label>
             <input type="file" name="avatar" id="avatar">
             <input type="text" name="username" value="<%= user.username %>" required>
@@ -25,5 +25,35 @@
         </form>
         <a href="/chat" class="btn btn-secondary">Back to Chat</a>
     </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        document.getElementById('profile-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            try {
+                const response = await fetch('/profile/update', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    // Emit the 'user avatar updated' event with user information
+                    socket.emit('user avatar updated', {
+                        userId: '<%= user._id %>',
+                        avatar: '/uploads/' + formData.get('avatar').name
+                    });
+
+                    window.location.href = '/chat';
+                } else {
+                    console.error('Update failed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
 </body>
 </html>

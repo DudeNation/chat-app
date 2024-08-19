@@ -55,7 +55,7 @@ app.get('/', (req, res) => {
   res.render('home', { title: 'CHAT-APP FOR EVERYONE' });
 });
 
-const activeUsers = new Set();
+const activeUsers = new Map();
 const chatRooms = new Set(['General']);
 
 // Socket.io
@@ -79,7 +79,12 @@ io.on('connection', async (socket) => {
     socket.userId = user._id;
     socket.username = user.username;
     socket.avatar = user.avatar || '/images/default-avatar.png';
-    activeUsers.add(socket.username);
+    activeUsers.set(socket.userId, {
+      _id: socket.userId,
+      username: socket.username,
+      avatar: socket.avatar,
+      status: 'online'
+    });
     socket.join('General');
 
     const recentMessages = await Message.find({ room: 'General' })
@@ -89,14 +94,7 @@ io.on('connection', async (socket) => {
     socket.emit('chat history', recentMessages.reverse());
 
     io.to('General').emit('user joined', `${socket.username} joined the chat`);
-    io.emit('update active users', Array.from(activeUsers).map(username => {
-      const userObj = Array.from(activeUsers).find(user => user.username === username);
-      return {
-        username,
-        avatar: userObj ? userObj.avatar : '/images/default-avatar.png',
-        status: 'online'
-      };
-    }));
+    io.emit('update active users', Array.from(activeUsers.values()));
     io.emit('update chat rooms', Array.from(chatRooms));
     console.log(`${user.username} connected`);
   } else {
@@ -106,16 +104,9 @@ io.on('connection', async (socket) => {
 
   socket.on('disconnect', () => {
     if (socket.username) {
-      activeUsers.delete(socket.username);
+      activeUsers.delete(socket.userId);
       io.to('General').emit('user left', `${socket.username} left the chat`);
-      io.emit('update active users', Array.from(activeUsers).map(username => {
-        const userObj = Array.from(activeUsers).find(user => user.username === username);
-        return {
-          username,
-          avatar: userObj ? userObj.avatar : '/images/default-avatar.png',
-          status: username === socket.username ? 'offline' : 'online'
-        };
-      }));
+      io.emit('update active users', Array.from(activeUsers.values()));
       console.log(`${socket.username} disconnected`);
     }
   });
@@ -149,11 +140,13 @@ io.on('connection', async (socket) => {
     });
     await message.save();
 
-    // Update the user's avatar in the activeUsers set
-    const userObj = Array.from(activeUsers).find(u => u.username === socket.username);
-    if (userObj) {
-      userObj.avatar = user.avatar;
-    }
+    // Update the user's information in the activeUsers map
+    activeUsers.set(socket.userId, {
+      _id: socket.userId,
+      username: socket.username,
+      avatar: socket.avatar,
+      status: 'online'
+    });
 
     io.to(room).emit('chat message', { 
       username: socket.username, 
@@ -164,14 +157,7 @@ io.on('connection', async (socket) => {
     });
 
     // Emit the updated active users list
-    io.emit('update active users', Array.from(activeUsers).map(username => {
-      const user = Array.from(activeUsers).find(u => u.username === username);
-      return {
-        username: user ? user.username : username,
-        avatar: user ? user.avatar : '/images/default-avatar.png',
-        status: 'online'
-      };
-    }));
+    io.emit('update active users', Array.from(activeUsers.values()));
 
     console.log(`Message from ${socket.username}: ${msg.text}`);
   });

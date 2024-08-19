@@ -146,7 +146,12 @@
             if (userElement) {
                 const avatarElement = userElement.querySelector('.avatar');
                 avatarElement.src = data.avatar;
+                avatarElement.classList.remove('default-avatar');
             }
+            const messageElements = document.querySelectorAll(`.message[data-user-id="${data.userId}"] .avatar`);
+            messageElements.forEach(avatarElement => {
+                avatarElement.src = data.avatar;
+            });
         });
 
         localStorage.setItem('socketId', socket.id);
