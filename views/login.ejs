@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title>Login</title>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body class="auth-page">
@@ -12,7 +12,7 @@
         <h1 class="app-title">ChatApp</h1>
         <h2>Login</h2>
         <form action="/auth/login" method="POST" class="auth-form">
-            <input type="text" name="username" placeholder="Username" required>
+            <input type="text" name="username" placeholder="Username" value="<%= locals.username %>" required>
             <input type="password" name="password" placeholder="Password" required>
             <button type="submit" class="btn btn-primary">Login</button>
         </form>
