@@ -24,11 +24,13 @@
                     <a href="/auth/logout" class="btn btn-secondary">Logout</a>
                 </div>
             </header>
-            <div id="chat-messages" class="chat-messages"></div>
-            <form id="chat-form" class="chat-form">
-                <input id="msg" type="text" placeholder="Type a message..." required autocomplete="off">
-                <button type="submit" class="btn btn-primary">Send</button>
-            </form>
+            <div id="chat-messages" class="chat-messages">
+                <div class="messages-container"></div>
+                <form id="chat-form" class="chat-form">
+                    <input id="msg" type="text" placeholder="Type a message..." required autocomplete="off">
+                    <button type="submit" class="btn btn-primary">Send</button>
+                </form>
+            </div>
         </main>
     </div>
     <script src="/socket.io/socket.io.js"></script>
@@ -57,19 +59,43 @@
         });
 
         function appendMessage(data) {
-            const messagesDiv = document.getElementById('chat-messages');
+            const messagesContainer = document.querySelector('.messages-container');
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', data.username === username ? 'sent' : 'received');
+
+            let messageContent = data.text;
+            if (data.url_info && data.url_info.title) {
+                messageContent += `
+                    <div class="url-preview">
+                        <a href="${data.text}" target="_blank">
+                            <img src="${data.url_info.image}" alt="${data.url_info.title}">
+                            <div class="url-info">
+                                <h4>${data.url_info.title}</h4>
+                                <p>${data.url_info.description}</p>
+                            </div>
+                        </a>
+                    </div>
+                `;
+            } else {
+                // wrap URLs in <a> tags and truncate long URLs
+                messageContent = messageContent.replace(/(https?:\/\/\S+)/gi, (url) => {
+                    const truncatedUrl = url.length > 30 ? url.substr(0, 30) + '...' : url;
+                    return `<a href="${url}" target="_blank">${truncatedUrl}</a>`;
+                });
+            }
+
             messageElement.innerHTML = `
-                <img src="${data.avatar}" alt="${data.username}" class="avatar">
-                <div class="message-content">
-                    <p class="username">${data.username}</p>
-                    <p class="text">${data.text}</p>
-                    <p class="timestamp">${new Date(data.timestamp).toLocaleTimeString()}</p>
+                <div class="user-item" data-user-id="${data.userId}">
+                    <img src="${data.avatar}" alt="${data.username}" class="avatar">
+                    <div class="message-content">
+                        <p class="username"><strong>${data.username}</strong></p>
+                        <div class="text">${messageContent}</div>
+                        <p class="timestamp">${new Date(data.timestamp).toLocaleTimeString()}</p>
+                    </div>
                 </div>
             `;
-            messagesDiv.append(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            messagesContainer.append(messageElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
         socket.on('user joined', (message) => {
@@ -81,12 +107,12 @@
         });
 
         function appendSystemMessage(message) {
-            const messagesDiv = document.getElementById('chat-messages');
+            const messagesContainer = document.querySelector('.messages-container');
             const messageElement = document.createElement('div');
             messageElement.classList.add('system-message');
             messageElement.innerHTML = `<span>${message}</span>`;
-            messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            messagesContainer.appendChild(messageElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
         socket.on('chat history', (messages) => {
@@ -105,13 +131,22 @@
             usersList.innerHTML = '';
             users.forEach(user => {
                 const userElement = document.createElement('li');
-                if (user === username) {
-                    userElement.textContent = `${user} (You)`;
-                } else {
-                    userElement.textContent = user;
-                }
+                userElement.innerHTML = `
+                    <div class="user-item" data-user-id="${user._id}">
+                        <img src="${user.avatar}" alt="${user.username}" class="avatar ${user.status}">
+                        <span class="username">${user.username}${user.username === username ? ' (You)' : ''}</span>
+                    </div>
+                `;
                 usersList.appendChild(userElement);
             });
+        });
+
+        socket.on('user avatar updated', (data) => {
+            const userElement = document.querySelector(`#users-list .user-item[data-user-id="${data.userId}"]`);
+            if (userElement) {
+                const avatarElement = userElement.querySelector('.avatar');
+                avatarElement.src = data.avatar;
+            }
         });
 
         localStorage.setItem('socketId', socket.id);
@@ -120,5 +155,94 @@
             socket.connect();
         }
     </script>
+    <style>
+        .chat-messages {
+          height: 70vh;
+          overflow-y: auto;
+          flex-direction: column;
+        }
+
+        .messages-container {
+          flex: 1;
+          overflow-y: auto;
+          padding: 1rem;
+        }
+
+        .chat-form {
+          display: flex;
+          padding: 1rem;
+          background: #f0f0f0;
+        }
+
+        .chat-form input {
+          flex: 1;
+          padding: 0.5rem;
+          border: none;
+          border-radius: 4px;
+        }
+
+        .chat-form button {
+          margin-left: 1rem;
+        }
+
+        .user-item {
+          display: flex;
+          align-items: center;
+        }
+      
+        .username {
+          font-weight: bold;
+          margin-left: 10px;
+        }
+      
+        .avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          margin-right: 10px;
+        }
+      
+        .avatar.online {
+          border: 2px solid green;
+        }
+      
+        .avatar.offline {
+          filter: grayscale(100%);
+        }
+
+        .url-preview {
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .url-preview a {
+            display: flex;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .url-preview img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+        }
+
+        .url-preview .url-info {
+            padding: 10px;
+        }
+
+        .url-preview h4 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .url-preview p {
+            margin: 5px 0 0;
+            font-size: 14px;
+            color: #666;
+        }
+      </style>
 </body>
 </html>

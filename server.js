@@ -43,12 +43,10 @@ mongoose.connect(process.env.MONGO_URI)
 // Routes
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
-const profileRoutes = require('./routes/profile');
 const adminRoutes = require('./routes/admin');
 
 app.use('/auth', authRoutes);
 app.use('/chat', chatRoutes);
-app.use('/profile', profileRoutes);
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 app.use('/admin', adminRoutes);
 
@@ -66,6 +64,9 @@ const chatRooms = new Set(['General']);
 
 const io = socketIo(server);
 io.use(sharedsession(session));
+
+const profileRoutes = require('./routes/profile')(io);
+app.use('/profile', profileRoutes);
 
 io.on('connection', async (socket) => {
   if (!socket.handshake.session.userId) {
@@ -88,7 +89,14 @@ io.on('connection', async (socket) => {
     socket.emit('chat history', recentMessages.reverse());
 
     io.to('General').emit('user joined', `${socket.username} joined the chat`);
-    io.emit('update active users', Array.from(activeUsers));
+    io.emit('update active users', Array.from(activeUsers).map(username => {
+      const userObj = Array.from(activeUsers).find(user => user.username === username);
+      return {
+        username,
+        avatar: userObj ? userObj.avatar : '/images/default-avatar.png',
+        status: 'online'
+      };
+    }));
     io.emit('update chat rooms', Array.from(chatRooms));
     console.log(`${user.username} connected`);
   } else {
@@ -100,18 +108,25 @@ io.on('connection', async (socket) => {
     if (socket.username) {
       activeUsers.delete(socket.username);
       io.to('General').emit('user left', `${socket.username} left the chat`);
-      io.emit('update active users', Array.from(activeUsers));
+      io.emit('update active users', Array.from(activeUsers).map(username => {
+        const userObj = Array.from(activeUsers).find(user => user.username === username);
+        return {
+          username,
+          avatar: userObj ? userObj.avatar : '/images/default-avatar.png',
+          status: username === socket.username ? 'offline' : 'online'
+        };
+      }));
       console.log(`${socket.username} disconnected`);
     }
   });
 
   socket.on('chat message', async (msg, room) => {
     // parse first link in message
-    const link = msg.text.match(/\bhttps?:\/\/\S+/gi);
+    const urls = msg.text.match(/\bhttps?:\/\/\S+/gi);
     let url_info = {};
-    if (link) {
+    if (urls) {
       try {
-        const preview = await linkPreviewGenerator(link[0]);
+        const preview = await linkPreviewGenerator(urls[0]);
         url_info = {
           title: preview.title,
           description: preview.description,
@@ -134,6 +149,12 @@ io.on('connection', async (socket) => {
     });
     await message.save();
 
+    // Update the user's avatar in the activeUsers set
+    const userObj = Array.from(activeUsers).find(u => u.username === socket.username);
+    if (userObj) {
+      userObj.avatar = user.avatar;
+    }
+
     io.to(room).emit('chat message', { 
       username: socket.username, 
       text: userMsg, 
@@ -141,6 +162,17 @@ io.on('connection', async (socket) => {
       timestamp: message.timestamp,
       url_info
     });
+
+    // Emit the updated active users list
+    io.emit('update active users', Array.from(activeUsers).map(username => {
+      const user = Array.from(activeUsers).find(u => u.username === username);
+      return {
+        username: user ? user.username : username,
+        avatar: user ? user.avatar : '/images/default-avatar.png',
+        status: 'online'
+      };
+    }));
+
     console.log(`Message from ${socket.username}: ${msg.text}`);
   });
 
