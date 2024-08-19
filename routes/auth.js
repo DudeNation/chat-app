@@ -75,7 +75,7 @@ router.get('/logout', async (req, res) => {
     user.status = 'offline';
     await user.save();
     req.session.destroy();
-    res.redirect('/');
+    res.redirect('/auth/login?username=' + user.username);
   } catch (error) {
     res.status(500).send(error);
   }
