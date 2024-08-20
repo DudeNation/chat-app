@@ -1,4 +1,5 @@
 const socket = io();
+console.log('Socket connected on admin page');
 
 const chatRoomSelect = document.getElementById('chat-room-select');
 const joinRoomBtn = document.getElementById('join-room-btn');
@@ -14,6 +15,7 @@ joinRoomBtn.addEventListener('click', () => {
     if (selectedRoom) {
         socket.emit('admin join', selectedRoom);
         currentRoom = selectedRoom;
+        console.log('Admin joined room:', selectedRoom);
     }
 });
 

@@ -182,10 +182,11 @@ io.on('connection', async (socket) => {
       text: userMsg, 
       avatar: user.avatar || '/images/default-avatar.png',
       timestamp: message.timestamp,
-      url_info
+      url_info,
+      room: room // Add this line
     });
 
-    // Emit the chat message to the admin socket as well
+    // Emit to admin room as well
     io.to('admin').emit('chat message', {
       username: socket.username,
       text: userMsg,
@@ -223,14 +224,14 @@ io.on('connection', async (socket) => {
 
   socket.on('admin join', (room) => {
     socket.join(room);
+    console.log('Admin joined room:', room);
     io.to(room).emit('admin joined', socket.username);
-    console.log(`${socket.username} joined the chat as admin`);
   });
 
   socket.on('admin leave', (room) => {
     socket.leave(room);
+    console.log('Admin left room:', room);
     io.to(room).emit('admin left', socket.username);
-    console.log(`${socket.username} left the chat as admin`);
   });
 
 });
