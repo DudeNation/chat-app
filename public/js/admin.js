@@ -10,21 +10,6 @@ const adminLog = document.getElementById('admin-log');
 
 let currentRoom = null;
 
-function appendLog(message) {
-  const logEntry = document.createElement('div');
-  logEntry.innerText = message;
-  adminLog.appendChild(logEntry);
-  adminLog.scrollTop = adminLog.scrollHeight;
-}
-
-socket.on('user joined', (username, room) => {
-  appendLog(`User joined: ${username} (Room: ${room})`);
-});
-
-socket.on('user left', (username, room) => {
-  appendLog(`User left: ${username} (Room: ${room})`);
-});
-
 socket.on('admin joined', (username) => {
   const adminChatMessages = document.getElementById('admin-chat-messages');
   const message = document.createElement('div');
