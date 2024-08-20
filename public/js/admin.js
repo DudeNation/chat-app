@@ -1,4 +1,7 @@
-const socket = io();
+const socket = io({
+    transports: ['websocket'],
+    upgrade: false
+});
 console.log('Socket connected on admin page');
 
 const chatRoomSelect = document.getElementById('chat-room-select');
@@ -13,16 +16,18 @@ let currentRoom = null;
 joinRoomBtn.addEventListener('click', () => {
     const selectedRoom = chatRoomSelect.value;
     if (selectedRoom) {
-        socket.emit('admin join', selectedRoom);
-        currentRoom = selectedRoom;
-        console.log('Admin joined room:', selectedRoom);
+      socket.emit('admin join', selectedRoom);
+      currentRoom = selectedRoom;
+      console.log('Admin attempting to join room:', selectedRoom);
+      adminChatMessages.innerHTML = ''; // Clear previous messages
     }
-});
+  });
 
 leaveRoomBtn.addEventListener('click', () => {
     if (currentRoom) {
         socket.emit('admin leave', currentRoom);
         currentRoom = null;
+        console.log('Admin left the room');
         adminChatMessages.innerHTML = '';
     }
 });
@@ -37,11 +42,20 @@ adminChatForm.addEventListener('submit', (e) => {
 });
 
 socket.on('chat message', (data) => {
+    console.log('Received chat message:', data);
     if (currentRoom === data.room) {
-        const messageElement = document.createElement('div');
-        messageElement.innerHTML = `<strong>${data.username}:</strong> ${data.text}`;
-        adminChatMessages.appendChild(messageElement);
-        adminChatMessages.scrollTop = adminChatMessages.scrollHeight;
+      const messageElement = document.createElement('div');
+      messageElement.innerHTML = `
+        <div class="message ${data.isAdmin ? 'admin-message' : ''}">
+          <img src="${data.avatar}" alt="${data.username}" class="avatar">
+          <div class="message-content">
+            <p><strong>${data.username}${data.isAdmin ? ' (Admin)' : ''}:</strong> ${data.text}</p>
+            <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
+          </div>
+        </div>
+      `;
+      adminChatMessages.appendChild(messageElement);
+      adminChatMessages.scrollTop = adminChatMessages.scrollHeight;
     }
 });
 

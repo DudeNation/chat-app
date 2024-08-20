@@ -101,19 +101,6 @@ io.on('connection', async (socket) => {
     io.to('admin').emit('user joined', socket.username); // Emit user joined event to admin
     console.log(`${user.username} connected`);
     console.log(`${user.username} joined the chat`);
-
-    if (user.isAdmin) {
-      socket.join('admin');
-      socket.emit('admin connected');
-      activeUsers.set(socket.userId, {
-        _id: socket.userId,
-        username: socket.username,
-        avatar: '/images/default-avatar_2.jpg',
-        status: 'online',
-        isAdmin: true
-      });
-      io.to('admin').emit('user joined', socket.username); // Emit user joined event to admin
-    }
   } else {
     socket.emit('unauthorized', 'You are not authorized to join the chat');
     return socket.disconnect();
@@ -121,20 +108,10 @@ io.on('connection', async (socket) => {
 
   socket.on('disconnect', () => {
     if (socket.username) {
-      if (socket.handshake.session.isAdmin) {
-        activeUsers.set(socket.userId, {
-          _id: socket.userId,
-          username: socket.username,
-          avatar: '/images/default-avatar_2.jpg',
-          status: 'offline',
-          isAdmin: true
-        });
-        io.to('admin').emit('user left', socket.username); // Emit user left event to admin
-      } else {
-        activeUsers.delete(socket.userId);
-        io.to('General').emit('user left', `${socket.username} left the chat`);
-      }
+      activeUsers.delete(socket.userId);
+      io.to('General').emit('user left', `${socket.username} left the chat`);
       io.emit('update active users', Array.from(activeUsers.values()));
+      io.to('admin').emit('user left', socket.username); // Emit user left event to admin
       console.log(`${socket.username} left the chat`);
       console.log(`${socket.username} disconnected`);
     }
@@ -182,11 +159,10 @@ io.on('connection', async (socket) => {
       text: userMsg, 
       avatar: user.avatar || '/images/default-avatar.png',
       timestamp: message.timestamp,
-      url_info,
-      room: room // Add this line
+      url_info
     });
 
-    // Emit to admin room as well
+    // Emit the chat message to the admin socket as well
     io.to('admin').emit('chat message', {
       username: socket.username,
       text: userMsg,
@@ -213,25 +189,21 @@ io.on('connection', async (socket) => {
   socket.on('join room', (room) => {
     socket.join(room);
     io.to(room).emit('user joined', socket.username, room);
-    io.to('admin').emit('user joined', socket.username, room); // Emit user joined event to admin
+    io.to('admin').emit('user joined', socket.username); // Emit user joined event to admin
   });
 
   socket.on('leave room', (room) => {
     socket.leave(room);
     io.to(room).emit('user left', socket.username, room);
-    io.to('admin').emit('user left', socket.username, room); // Emit user left event to admin
+    io.to('admin').emit('user left', socket.username); // Emit user left event to admin
   });
 
   socket.on('admin join', (room) => {
     socket.join(room);
-    console.log('Admin joined room:', room);
-    io.to(room).emit('admin joined', socket.username);
   });
 
   socket.on('admin leave', (room) => {
     socket.leave(room);
-    console.log('Admin left room:', room);
-    io.to(room).emit('admin left', socket.username);
   });
 
 });
