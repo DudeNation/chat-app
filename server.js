@@ -98,7 +98,9 @@ io.on('connection', async (socket) => {
     io.to('General').emit('user joined', `${socket.username} joined the chat`);
     io.emit('update active users', Array.from(activeUsers.values()));
     io.emit('update chat rooms', Array.from(chatRooms));
+    io.to('admin').emit('user joined', socket.username); // Emit user joined event to admin
     console.log(`${user.username} connected`);
+    console.log(`${user.username} joined the chat`);
   } else {
     socket.emit('unauthorized', 'You are not authorized to join the chat');
     return socket.disconnect();
@@ -109,6 +111,8 @@ io.on('connection', async (socket) => {
       activeUsers.delete(socket.userId);
       io.to('General').emit('user left', `${socket.username} left the chat`);
       io.emit('update active users', Array.from(activeUsers.values()));
+      io.to('admin').emit('user left', socket.username); // Emit user left event to admin
+      console.log(`${socket.username} left the chat`);
       console.log(`${socket.username} disconnected`);
     }
   });
@@ -185,11 +189,13 @@ io.on('connection', async (socket) => {
   socket.on('join room', (room) => {
     socket.join(room);
     io.to(room).emit('user joined', socket.username, room);
+    io.to('admin').emit('user joined', socket.username); // Emit user joined event to admin
   });
 
   socket.on('leave room', (room) => {
     socket.leave(room);
     io.to(room).emit('user left', socket.username, room);
+    io.to('admin').emit('user left', socket.username); // Emit user left event to admin
   });
 
   socket.on('admin join', (room) => {

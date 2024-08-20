@@ -17,6 +17,14 @@ function appendLog(message) {
     adminLog.scrollTop = adminLog.scrollHeight;
   }
 
+socket.on('user joined', (username) => {
+    appendLog(`User joined: ${username}`);
+});
+  
+socket.on('user left', (username) => {
+    appendLog(`User left: ${username}`);
+});
+
 joinRoomBtn.addEventListener('click', () => {
     const selectedRoom = chatRoomSelect.value;
     if (selectedRoom) {
