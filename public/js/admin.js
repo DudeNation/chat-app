@@ -69,18 +69,18 @@ adminChatForm.addEventListener('submit', (e) => {
 socket.emit('admin join', 'admin');
 
 socket.on('chat message', (data) => {
-  if (currentRoom === data.room) {
-    const messageElement = document.createElement('div');
-    messageElement.innerHTML = `
-      <div class="message">
-        <img src="${data.avatar || '/images/default-avatar.png'}" alt="${data.username}" class="avatar">
-        <div class="message-content">
-          <p><strong>${data.username}:</strong> ${data.text}</p>
-          <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
+    if (currentRoom === data.room) {
+      const messageElement = document.createElement('div');
+      messageElement.innerHTML = `
+        <div class="message">
+          <img src="${data.avatar || '/images/default-avatar.png'}" alt="${data.username}" class="avatar">
+          <div class="message-content">
+            <p><strong>${data.username}:</strong> ${data.text}</p>
+            <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
+          </div>
         </div>
-      </div>
-    `;
-    adminChatMessages.appendChild(messageElement);
-    adminChatMessages.scrollTop = adminChatMessages.scrollHeight;
-  }
-});
+      `;
+      adminChatMessages.appendChild(messageElement);
+      adminChatMessages.scrollTop = adminChatMessages.scrollHeight;
+    }
+  });
