@@ -43,12 +43,12 @@ mongoose.connect(process.env.MONGO_URI)
 // Routes
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
-const adminRoutes = require('./routes/admin');
+
 
 app.use('/auth', authRoutes);
 app.use('/chat', chatRoutes);
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
-app.use('/admin', adminRoutes);
+
 
 // Root route
 app.get('/', (req, res) => {
@@ -58,6 +58,8 @@ app.get('/', (req, res) => {
 const activeUsers = new Map();
 const chatRooms = new Set(['General']);
 
+const adminRoutes = require('./routes/admin')(chatRooms);
+app.use('/admin', adminRoutes);
 // Socket.io
 
 
@@ -177,6 +179,14 @@ io.on('connection', async (socket) => {
   socket.on('leave room', (room) => {
     socket.leave(room);
     io.to(room).emit('user left', socket.username, room);
+  });
+
+  socket.on('admin join', (room) => {
+    socket.join(room);
+  });
+
+  socket.on('admin leave', (room) => {
+    socket.leave(room);
   });
 
 });

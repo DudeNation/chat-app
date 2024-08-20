@@ -9,12 +9,25 @@
 <body>
     <div class="admin-container">
         <h1>Admin Panel</h1>
-        <form action="/admin/update-background" method="POST" enctype="multipart/form-data">
+        <form action="/admin/update-background" method="POST" enctype="multipart/form-data" class="admin-form">
             <label for="background">Update Background Image:</label>
             <input type="file" name="background" id="background" accept="image/*" required>
-            <button type="submit">Update</button>
+            <button type="submit" class="btn btn-primary">Update</button>
         </form>
+        <div class="admin-chat-container">
+            <h2>Watch Chat Room</h2>
+            <select id="chat-room-select" class="chat-room-select">
+                <% chatRooms.forEach(room => { %>
+                    <option value="<%= room %>"><%= room %></option>
+                <% }); %>
+            </select>
+            <button id="join-room-btn" class="btn btn-primary">Join Room</button>
+            <button id="leave-room-btn" class="btn btn-secondary">Leave Room</button>
+            <div id="admin-chat-messages" class="admin-chat-messages"></div>
+        </div>
         <a href="/chat" class="btn btn-secondary">Back to Chat</a>
     </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/admin.js"></script>
 </body>
 </html>
