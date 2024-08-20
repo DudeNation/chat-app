@@ -414,27 +414,6 @@
 }
 
 /* Admin Page */
-.admin-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-.admin-form {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 2rem;
-}
-
-.admin-form label {
-  font-weight: bold;
-  margin-bottom: 1rem;
-}
-
-.admin-form input[type="file"] {
-  margin-bottom: 1rem;
-}
-
 .admin-chat-container {
   margin-bottom: 2rem;
 }

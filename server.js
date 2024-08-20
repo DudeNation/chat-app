@@ -158,6 +158,17 @@ io.on('connection', async (socket) => {
       url_info
     });
 
+    // Emit the chat message to the admin socket as well
+    io.to('admin').emit('chat message', {
+      username: socket.username,
+      text: userMsg,
+      room: room,
+      avatar: user.avatar || '/images/default-avatar.png',
+      timestamp: message.timestamp,
+      url_info
+    });
+
+
     // Emit the updated active users list
     io.emit('update active users', Array.from(activeUsers.values()));
 
