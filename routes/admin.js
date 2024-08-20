@@ -24,7 +24,7 @@ module.exports = (chatRooms) => {
   });
 
   router.get('/', adminAuth, (req, res) => {
-    res.render('admin');
+    res.render('admin', { chatRooms: Array.from(chatRooms) });
   });
 
   router.post('/update-background', adminAuth, upload.single('background'), async (req, res) => {
