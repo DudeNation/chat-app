@@ -212,21 +212,25 @@ io.on('connection', async (socket) => {
   socket.on('join room', (room) => {
     socket.join(room);
     io.to(room).emit('user joined', socket.username, room);
-    io.to('admin').emit('user joined', socket.username); // Emit user joined event to admin
+    io.to('admin').emit('user joined', socket.username, room); // Emit user joined event to admin
   });
 
   socket.on('leave room', (room) => {
     socket.leave(room);
     io.to(room).emit('user left', socket.username, room);
-    io.to('admin').emit('user left', socket.username); // Emit user left event to admin
+    io.to('admin').emit('user left', socket.username, room); // Emit user left event to admin
   });
 
   socket.on('admin join', (room) => {
     socket.join(room);
+    io.to(room).emit('admin joined', socket.username);
+    console.log(`${socket.username} joined the chat as admin`);
   });
 
   socket.on('admin leave', (room) => {
     socket.leave(room);
+    io.to(room).emit('admin left', socket.username);
+    console.log(`${socket.username} left the chat as admin`);
   });
 
 });
