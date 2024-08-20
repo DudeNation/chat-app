@@ -101,6 +101,19 @@ io.on('connection', async (socket) => {
     io.to('admin').emit('user joined', socket.username); // Emit user joined event to admin
     console.log(`${user.username} connected`);
     console.log(`${user.username} joined the chat`);
+
+    if (user.isAdmin) {
+      socket.join('admin');
+      socket.emit('admin connected');
+      activeUsers.set(socket.userId, {
+        _id: socket.userId,
+        username: socket.username,
+        avatar: '/images/default-avatar_2.jpg',
+        status: 'online',
+        isAdmin: true
+      });
+      io.to('admin').emit('user joined', socket.username); // Emit user joined event to admin
+    }
   } else {
     socket.emit('unauthorized', 'You are not authorized to join the chat');
     return socket.disconnect();
@@ -108,10 +121,20 @@ io.on('connection', async (socket) => {
 
   socket.on('disconnect', () => {
     if (socket.username) {
-      activeUsers.delete(socket.userId);
-      io.to('General').emit('user left', `${socket.username} left the chat`);
+      if (socket.handshake.session.isAdmin) {
+        activeUsers.set(socket.userId, {
+          _id: socket.userId,
+          username: socket.username,
+          avatar: '/images/default-avatar_2.jpg',
+          status: 'offline',
+          isAdmin: true
+        });
+        io.to('admin').emit('user left', socket.username); // Emit user left event to admin
+      } else {
+        activeUsers.delete(socket.userId);
+        io.to('General').emit('user left', `${socket.username} left the chat`);
+      }
       io.emit('update active users', Array.from(activeUsers.values()));
-      io.to('admin').emit('user left', socket.username); // Emit user left event to admin
       console.log(`${socket.username} left the chat`);
       console.log(`${socket.username} disconnected`);
     }
