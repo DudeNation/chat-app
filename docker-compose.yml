@@ -1,0 +1,18 @@
+version: '3'
+services:
+  app:
+    build: .
+    ports:
+      - "1212:1212"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/chatapp
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
+
