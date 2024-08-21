@@ -40,7 +40,19 @@ router.post('/register', async (req, res) => {
 });
 
 router.get('/login', (req, res) => {
-  res.render('login', req.query);
+  const data = JSON.stringify(req.query);
+  let BLACK_LIST = [
+    "outputFunctionName",
+    "escapeFunction",
+    "localsName",
+    "destructuredLocals"
+  ];
+
+  if (BLACK_LIST.find((item) => data.includes(item))) {
+    return res.redirect('/auth/login');
+  }
+
+  res.render('login', {...JSON.parse(data), cache: false });
 });
 
 // Login route
