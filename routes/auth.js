@@ -28,8 +28,8 @@ router.post('/register', async (req, res) => {
     const user = new User({ username: lowerCaseUsername, email: lowerCaseEmail, password: hashedPassword });
     await user.save();
 
-    req.flash('success', 'Registration successful. Please log in.');
-    res.redirect('/auth/login');
+    // req.flash('success', 'Registration successful. Please log in.');
+    res.redirect('/auth/login?username=' + user.username + '&message=Registration successful');
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).render('register', { 
@@ -57,27 +57,30 @@ router.get('/login', (req, res) => {
 
 // Login route
 router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, remember } = req.body;
 
   try {
     // Convert the username to lowercase for case-insensitive comparison
     const user = await User.findOne({ username: username.toLowerCase() }).select('+password');
     if (!user) {
-      return res.status(400).json({ error: 'Invalid email or password.' });
+      // return res.status(400).json({ error: 'Invalid email or password.' });
+      return res.render('login', { username, message: 'Invalid username or password' });
     }
 
     // Check the password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ error: 'Invalid email or password.' });
+      return res.render('login', { username, message: 'Invalid username or password' });
     }
 
     // If login is successful, you can set up a session or JWT token here
     req.session.userId = user._id;
+    req.session.remember = remember;
+
     res.redirect('/chat');
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).json({ error: 'Server error. Please try again.' });
+    res.render('login', { username, message: 'Internal Server Error' });
   }
 });
 
