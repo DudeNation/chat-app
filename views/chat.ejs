@@ -166,6 +166,23 @@
         if (storedSocketId) {
             socket.connect();
         }
+
+        socket.on('account_deleted', () => {
+            const modal = document.createElement('div');
+            modal.innerHTML = `
+                <div class="delete-modal">
+                    <h2>Account Deleted</h2>
+                    <p>Your account has been deleted by the system administrator.</p>
+                    <button onclick="window.location.href='/'">OK</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        });
+
+        socket.on('user_deleted_by_system', (username) => {
+            const messagesDiv = document.getElementById('chat-messages');
+            messagesDiv.innerHTML += `<p><em>${username} has been deleted by the system.</em></p>`;
+        });
     </script>
     <style>
         .chat-messages {

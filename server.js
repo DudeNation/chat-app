@@ -208,5 +208,73 @@ io.on('connection', async (socket) => {
 
 });
 
+app.get('/system', async (req, res) => {
+  const secretKey = req.query.key;
+  if (secretKey === 'your_secret_key_here') {
+    const activeUserDetails = await Promise.all(Array.from(activeUsers).map(async (userId) => {
+      const user = await User.findById(userId);
+      if (user) {
+        return { id: userId, username: user.username, avatar: user.avatar || DEFAULT_AVATAR };
+      } else {
+        // Handle case where user is not found
+        return { id: userId, username: 'Unknown User', avatar: DEFAULT_AVATAR };
+      }
+    }));
+    res.render('system', { title: 'System Management', activeUsers: activeUserDetails });
+  } else {
+    res.status(403).render('403', { title: 'Access Denied' });
+  }
+});
+
+app.get('/maintenance', (req, res) => {
+    // Show a realistic maintenance page
+    res.render('maintenance', { title: 'System Maintenance' });
+  }
+);
+
+function deleteUser(userId) {
+  if (confirm('Are you sure you want to delete this user?')) {
+      fetch('/system/delete-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, systemKey: 'your_system_key_here' })
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              alert('User deleted successfully');
+              location.reload();
+          } else {
+              alert('Failed to delete user: ' + data.message);
+          }
+      })
+      .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while deleting the user');
+      });
+  }
+}
+
+app.post('/system/delete-user', async (req, res) => {
+  const { userId, systemKey } = req.body;
+  if (systemKey === 'your_system_key_here') {
+    try {
+      const objectIdPart = userId.split(',')[0];
+      const deletedUser = await User.findByIdAndDelete(objectIdPart);
+      activeUsers.delete(objectIdPart);
+      io.to(objectIdPart).emit('account_deleted');
+      io.emit('update active users', Array.from(activeUsers));
+      io.emit('user_deleted_by_system', deletedUser.username);
+      console.log(`User deleted by system: ${deletedUser.username} (ID: ${objectIdPart})`);
+      res.json({ success: true, message: 'User deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ success: false, message: 'Failed to delete user: ' + error.message });
+    }
+  } else {
+    res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+});
+
 const PORT = process.env.PORT || 1212;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
