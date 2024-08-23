@@ -42,9 +42,16 @@ module.exports = (chatRooms) => {
   router.post('/login', (req, res) => {
     const { username, password } = req.body;
 
+    // Validate input
+    if (!username || !password) {
+      return res.status(400).render('adminLogin', {
+        error: 'Please provide username and password'
+      });
+    }
+
     // Hardcoded admin credentials
     const adminUsername = 'admin';
-    const adminPassword = 'password';
+    const adminPassword = 'cEBzU3cwckQjOno0';
 
     if (username === adminUsername && password === adminPassword) {
       req.session.isAdmin = true;

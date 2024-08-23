@@ -24,7 +24,6 @@ const session = require('express-session')({
 });
 const sharedsession = require("express-socket.io-session");
 
-
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -46,11 +45,9 @@ mongoose.connect(process.env.MONGO_URI)
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
 
-
 app.use('/auth', authRoutes);
 app.use('/chat', chatRoutes);
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
-
 
 // Root route
 app.get('/', (req, res) => {
@@ -63,8 +60,6 @@ const chatRooms = new Set(['General']);
 const adminRoutes = require('./routes/admin')(chatRooms);
 app.use('/admin', adminRoutes);
 // Socket.io
-
-
 
 const io = socketIo(server);
 io.use(sharedsession(session));
@@ -222,7 +217,7 @@ io.on('connection', async (socket) => {
 
 app.get('/system', async (req, res) => {
   const secretKey = req.query.key;
-  if (secretKey === 'your_secret_key_here') {
+  if (secretKey === 'eW91cl9zeXN0ZW1fa2V5X2hlcmU=') {
     const activeUserDetails = await Promise.all(Array.from(activeUsers).map(async (userId) => {
       const user = await User.findById(userId);
       if (user) {
@@ -249,7 +244,7 @@ function deleteUser(userId) {
       fetch('/system/delete-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, systemKey: 'your_system_key_here' })
+          body: JSON.stringify({ userId, systemKey: 'eW91cl9zeXN0ZW1fa2V5X2hlcmU=' })
       })
       .then(response => response.json())
       .then(data => {
@@ -269,7 +264,7 @@ function deleteUser(userId) {
 
 app.post('/system/delete-user', async (req, res) => {
   const { userId, systemKey } = req.body;
-  if (systemKey === 'your_system_key_here') {
+  if (systemKey === 'eW91cl9zeXN0ZW1fa2V5X2hlcmU=') {
     try {
       const objectIdPart = userId.split(',')[0];
       const deletedUser = await User.findByIdAndDelete(objectIdPart);
