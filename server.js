@@ -4,6 +4,7 @@ const socketIo = require('socket.io');
 const mongoose = require('mongoose');
 const path = require('path');
 const flash = require('connect-flash');
+const logger = require('express-event-logger')
 const linkPreviewGenerator = require('link-preview-generator');
 var XSSFilter = require('xssfilter');
 var xssFilter = new XSSFilter();
@@ -28,6 +29,7 @@ const sharedsession = require("express-socket.io-session");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+app.use(logger); 
 app.use(session);
 app.use(flash());
 
