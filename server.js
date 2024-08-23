@@ -38,7 +38,22 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Database connection
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Connected to MongoDB'))
+  .then(() => {
+    console.log('Connected to MongoDB');
+    let find  = User.findOne({ username: 'admin' });
+    if (find) {
+      return;
+    }
+
+    let admin = new User({
+      username: 'admin',
+      email: 'admin@gmail.com',
+      password: bcrypt.hashSync('f4ke_p4ssw0rd', 10),
+      isAdmin: true,
+      avatar: '/images/default-avatar.png'
+    });
+    admin.save();
+  })
   .catch(err => console.error('Could not connect to MongoDB', err));
 
 // Routes
@@ -68,6 +83,7 @@ const profileRoutes = require('./routes/profile')(io);
 app.use('/profile', profileRoutes);
 
 const rateLimit = require('express-rate-limit');
+const bcrypt = require('bcryptjs/dist/bcrypt');
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
