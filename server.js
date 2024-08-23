@@ -38,9 +38,9 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Database connection
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
+  .then( async () => {
     console.log('Connected to MongoDB');
-    let find  = User.findOne({ username: 'admin' });
+    let find  = await User.findOne({ username: 'admin' });
     if (find) {
       return;
     }
@@ -52,7 +52,7 @@ mongoose.connect(process.env.MONGO_URI)
       isAdmin: true,
       avatar: '/images/default-avatar.png'
     });
-    admin.save();
+    await admin.save();
   })
   .catch(err => console.error('Could not connect to MongoDB', err));
 
