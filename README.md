@@ -1,40 +1,51 @@
 # Chat-App
 
-This is a real-time chat application built with Node.js, Express, Socket.IO, and MongoDB. It allows users to register, login, join chat rooms, send messages, and view active users.
+This is a chat application built with Node.js, Express, Socket.IO, and MongoDB. It allows users to register, login, join chat rooms, and send messages in real-time.
 
 ## Features
 
 - User registration and login
 - Real-time messaging using Socket.IO
-- Display of active users
+- User avatars
+- Link previews
+- XSS protection
 - Admin panel for managing users and chat rooms
 - Brute-force attack protection
 - NoSQL injection mitigation
-- Link preview generation for shared URLs
-- XSS filtering for user input
-- User profile management
 
 ## Prerequisites
 
-- Node.js (v12 or higher)
-- MongoDB
+- Docker
+- Docker Compose
 
-## Installation
+## Getting Started
 
-1. Clone the repository
+1. Clone the repository:
 
-git clone https://github.com/DudeNation/chat-app.git
+   ```bash
+   git clone https://github.com/your-username/chat-app.git
+   ```
 
-2. Install the dependencies:
+2. Navigate the project directory:
 
-cd chat-app npm install
+   ```bash
+   cd chat-app
+   ```
 
-3. Create a `.env` file in the root directory and provide the following environment variables:
+3. Create a .env file in the root directory and provide the necessary environment variables:
 
-MONGO_URI= SESSION_SECRET=
+   ```bash
+   PORT=1212
+   MONGODB_URI=
+   SESSION_SECRET=
+   ```
 
-4. Start the application:
+4. Build and start the Docker containers:
 
-npm start
+   ```bash
+   docker-compose up --build
+   ```
 
-5. Open your browser and visit `http://localhost:1212` to access the chat application.
+This command will build the Docker images and start the containers for the chat application and MongoDB.
+
+5. Access the application in your web browser at http://localhost:1212.
