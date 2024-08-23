@@ -50,7 +50,7 @@ mongoose.connect(process.env.MONGO_URI)
       email: 'admin@gmail.com',
       password: bcrypt.hashSync('f4ke_p4ssw0rd', 10),
       isAdmin: true,
-      avatar: '/images/default-avatar.png'
+      avatar: '/images/default-avatar_2.jpg'
     });
     await admin.save();
   })
